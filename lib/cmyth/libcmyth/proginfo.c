@@ -1957,3 +1957,78 @@ cmyth_proginfo_get_from_timeslot(cmyth_conn_t control, uint32_t chanid, time_t r
 	}
 
 }
+
+
+/*
+ * cmyth_generate_pixmap()
+ *
+ * Scope: PUBLIC
+ *
+ * Description
+ *
+ * Generate recording artwork on the backend
+ *
+ * Return Value:
+ *
+ * Success: 0
+ *
+ * Failure: -(ERRNO)
+ */
+extern int cmyth_generate_pixmap(cmyth_conn_t control, cmyth_proginfo_t prog, const char *token)
+{
+	char msg[4096];
+	int err = 0;
+	int count = 0;
+	int ret = 0;
+	char *proginfo;
+
+	if (!control) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: no connection\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	proginfo = cmyth_proginfo_string(control, prog);
+	if (proginfo == NULL) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: program_info failed.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	if (control->conn_version >= 61) {
+		snprintf(msg, sizeof(msg), "QUERY_GENPIXMAP2[]:[]%s[]:[]%s", token, proginfo);
+	} else {
+		snprintf(msg, sizeof(msg), "QUERY_GENPIXMAP[]:[]%s", proginfo);
+	}
+
+	free(proginfo);
+
+	pthread_mutex_lock(&mutex);
+
+	if ((err = cmyth_send_message(control, msg)) < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_send_message() failed (%d)\n", __FUNCTION__, err);
+		ret = err;
+		goto out;
+	}
+
+	count = cmyth_rcv_length(control);
+	if (count < 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_length() failed (%d)\n", __FUNCTION__, count);
+		goto out;
+	}
+
+	cmyth_rcv_string(control, &err, msg, sizeof(msg), count);
+	if (err) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: cmyth_rcv_string() failed\n", __FUNCTION__);
+		ret = err;
+		goto out;
+	}
+
+	if (strcmp(msg, "OK") != 0) {
+		cmyth_dbg(CMYTH_DBG_ERROR, "%s: didn't receive OK as response\n", __FUNCTION__);
+		goto out;
+	}
+
+out:
+	pthread_mutex_unlock(&mutex);
+
+	return ret;
+}

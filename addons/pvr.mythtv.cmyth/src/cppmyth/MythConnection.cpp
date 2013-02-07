@@ -265,6 +265,13 @@ MythProgramInfo MythConnection::GetRecordedProgram(int chanid, time_t recstartts
   return retval;
 }
 
+bool MythConnection::GeneratePreview(MythProgramInfo &recording, const CStdString &token)
+{
+  int retval = 0;
+  CMYTH_CONN_CALL(retval, retval < 0, cmyth_generate_pixmap(*m_conn_t, *recording.m_proginfo_t, const_cast<char*>(token.c_str())));
+  return retval >= 0;
+}
+
 ProgramInfoMap MythConnection::GetPendingPrograms()
 {
   Lock();

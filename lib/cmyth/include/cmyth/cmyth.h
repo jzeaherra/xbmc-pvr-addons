@@ -2280,4 +2280,14 @@ extern int64_t cmyth_mysql_get_recording_framerate(cmyth_database_t db, cmyth_pr
  */
 extern int cmyth_mysql_get_recording_artwork(cmyth_database_t db, cmyth_proginfo_t prog, char **coverart, char **fanart, char **banner);
 
+/**
+ * Generate recording artwork on the backend
+ * \param control backend control handle
+ * \param unique token
+ * \param prog program info
+ * \return success: 0
+ * \return failure: -(errno)
+ */
+extern int cmyth_generate_pixmap(cmyth_conn_t control, cmyth_proginfo_t prog, const char *token);
+
 #endif /* __CMYTH_H */
